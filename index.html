@@ -1,0 +1,692 @@
+<!DOCTYPE html><html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
+  <meta name="theme-color" content="#0f1220">
+  <title>Focus Project Tracker Pro</title>
+  <style>
+    :root {
+      --bg: #0f1220;
+      --panel: #151a2d;
+      --muted: #9aa3b2;
+      --text: #e9ecf1;
+      --brand: #6aa3ff;
+      --brand-2: #7effb2;
+      --danger: #ff6b6b;
+      --ok: #23d18b;
+      --card: #11162a;
+      --shadow: 0 10px 30px rgba(0,0,0,0.35)
+    }
+    * { box-sizing: border-box }
+    body {
+      margin: 0;
+      font-family: Inter, system-ui, -apple-system, Segoe UI, Roboto, Arial, sans-serif;
+      background: radial-gradient(1200px 600px at 70% -10%, rgba(106,163,255,0.25), transparent 60%),
+                  radial-gradient(900px 500px at -10% 0%, rgba(126,255,178,0.18), transparent 60%),
+                  var(--bg);
+      color: var(--text);
+      min-height: 100dvh;
+    }
+    .app {
+      width: 100%;
+      max-width: 100%;
+      margin: 0 auto;
+      min-height: 100dvh;
+      padding: 8px 8px calc(96px + env(safe-area-inset-bottom));
+    }
+    .topbar {
+      position: sticky;
+      top: 0;
+      z-index: 5;
+      padding: 12px 16px;
+      display: flex;
+      align-items: center;
+      gap: 10px;
+      backdrop-filter: blur(8px);
+      background: rgba(15,18,32,0.6);
+      border-bottom: 1px solid rgba(255,255,255,0.06)
+    }
+    .title {
+      font-weight: 700;
+      font-size: 18px
+    }
+    .grow { flex: 1 }
+    .chip {
+      background: linear-gradient(180deg, rgba(255,255,255,0.06), rgba(255,255,255,0.02));
+      border: 1px solid rgba(255,255,255,0.08);
+      border-radius: 999px;
+      padding: 8px 12px;
+      font-size: 12px;
+      color: var(--muted)
+    }
+    .tabs {
+      display: grid;
+      grid-template-columns: repeat(4, 1fr);
+      gap: 8px;
+      margin: 12px 0
+    }
+    .tab-btn {
+      background: linear-gradient(180deg, rgba(255,255,255,0.07), rgba(255,255,255,0.02));
+      border: 1px solid rgba(255,255,255,0.08);
+      border-radius: 16px;
+      padding: 12px;
+      text-align: center;
+      font-weight: 600;
+      color: var(--muted);
+      cursor: pointer;
+      user-select: none;
+      transition: transform .05s ease
+    }
+    .tab-btn:active { transform: translateY(1px) }
+    .tab-btn.active {
+      color: var(--text);
+      border-color: rgba(122,209,255,0.35);
+      box-shadow: inset 0 0 0 1px rgba(106,163,255,0.25),
+                  0 6px 20px rgba(106,163,255,0.12)
+    }
+    .panel {
+      background: linear-gradient(180deg, rgba(255,255,255,0.04), rgba(255,255,255,0.01));
+      border: 1px solid rgba(255,255,255,0.08);
+      border-radius: 20px;
+      padding: 16px;
+      box-shadow: var(--shadow);
+      margin-bottom: 16px
+    }
+    .row { display: flex; gap: 10px; align-items: center }
+    .col { display: flex; flex-direction: column; gap: 10px }input, textarea, select, button {
+  width: 100%;
+  background: var(--card);
+  border: 1px solid rgba(255,255,255,0.08);
+  color: var(--text);
+  border-radius: 14px;
+  padding: 14px 16px;
+  font-size: 16px;
+  min-height: 48px;
+  outline: none;
+  -webkit-tap-highlight-color: transparent;
+}
+textarea { min-height: 110px; resize: vertical }
+
+button.primary { background: linear-gradient(180deg, rgba(106,163,255,0.35), rgba(106,163,255,0.15)) }
+button.success { background: linear-gradient(180deg, rgba(35,209,139,0.35), rgba(35,209,139,0.15)) }
+button.warn { background: linear-gradient(180deg, rgba(255,107,107,0.35), rgba(255,107,107,0.15)) }
+
+.task {
+  display: grid;
+  grid-template-columns: 28px 1fr auto;
+  align-items: center;
+  gap: 10px;
+  padding: 10px 8px;
+  border-bottom: 1px dashed rgba(255,255,255,0.08)
+}
+.task:last-child { border-bottom: 0 }
+.check {
+  width: 22px; height: 22px;
+  border-radius: 6px;
+  border: 1px solid rgba(255,255,255,0.12);
+  display: grid; place-items: center;
+  cursor: pointer
+}
+.check.done { background: rgba(35,209,139,0.25); border-color: rgba(35,209,139,0.6) }
+.ttext.done { text-decoration: line-through; color: var(--muted) }
+
+.progress {
+  height: 12px;
+  background: rgba(255,255,255,0.06);
+  border: 1px solid rgba(255,255,255,0.08);
+  border-radius: 999px;
+  overflow: hidden
+}
+.bar {
+  height: 100%;
+  width: 0%;
+  background: linear-gradient(90deg, var(--brand), var(--brand-2));
+  transition: width .25s ease
+}
+
+.stats { display: grid; grid-template-columns: repeat(3, 1fr); gap: 10px }
+.stat {
+  background: linear-gradient(180deg, rgba(255,255,255,0.05), rgba(255,255,255,0.02));
+  border: 1px solid rgba(255,255,255,0.08);
+  border-radius: 16px;
+  padding: 14px;
+  text-align: center
+}
+.stat .big { font-size: 22px; font-weight: 800 }
+.muted { color: var(--muted); font-size: 12px }
+
+canvas { width: 100%; height: 240px; display: block }
+
+.footer {
+  position: fixed;
+  bottom: 0; left: 0; right: 0;
+  background: rgba(15,18,32,0.85);
+  backdrop-filter: blur(8px);
+  border-top: 1px solid rgba(255,255,255,0.08);
+  display: grid; grid-template-columns: repeat(4, 1fr); gap: 8px;
+  padding: 8px 12px calc(8px + env(safe-area-inset-bottom));
+  box-shadow: 0 -6px 18px rgba(0,0,0,0.35);
+  z-index: 10;
+}
+.footer button { padding: 14px; border-radius: 14px; font-weight: 700 }
+.footer button {
+  padding: 12px; border-radius: 14px; font-weight: 700
+}
+
+@media (min-width: 720px) {
+  .grid2 { display: grid; grid-template-columns: 1.2fr .8fr; gap: 16px }
+}
+@media (max-width: 480px) {
+  .title { font-size: 16px }
+  h1, h2, h3 { font-size: 18px }
+  .tabs { gap: 6px }
+  .tab-btn { padding: 10px; border-radius: 14px; font-size: 13px }
+}
+}
+
+  </style>
+</head>
+<body>
+  <div class="app">
+    <div class="topbar">
+      <div class="title">Focus Project Tracker Pro</div>
+      <span class="chip" id="dateChip"></span>
+      <div class="grow"></div>
+      <button class="chip" id="exportBtn">Export</button>
+      <label class="chip" for="importFile">Import</label>
+      <input id="importFile" type="file" accept="application/json" style="display:none" />
+    </div><div class="tabs">
+  <div class="tab-btn active" data-tab="today">Today</div>
+  <div class="tab-btn" data-tab="notes">Notes</div>
+  <div class="tab-btn" data-tab="calendar">Calendar</div>
+  <div class="tab-btn" data-tab="stats">Stats</div>
+</div>
+
+<div id="today" class="tab panel">
+  <div class="grid2">
+    <div class="col">
+      <div class="row">
+        <input id="projectInput" placeholder="Project name" />
+        <button id="saveProject" class="primary" style="width:auto">Save</button>
+      </div>
+      <div class="stats">
+        <div class="stat">
+          <div class="big" id="streak">0</div>
+          <div class="muted">Day streak</div>
+        </div>
+        <div class="stat">
+          <div class="big" id="todayDone">0</div>
+          <div class="muted">Done today</div>
+        </div>
+        <div class="stat">
+          <div class="big" id="totalLeft">0</div>
+          <div class="muted">Open tasks</div>
+        </div>
+      </div>
+      <div class="progress"><div class="bar" id="progressBar"></div></div>
+      <div class="row">
+        <input id="taskInput" placeholder="Add a task" />
+        <button id="addTask" class="success" style="width:auto">Add</button>
+      </div>
+      <div id="taskList"></div>
+    </div>
+    <div class="col">
+      <div class="panel">
+        <div style="font-weight:700; margin-bottom:8px">Daily note</div>
+        <textarea id="dailyNote" placeholder="Write your quick note for today"></textarea>
+        <div class="row">
+          <button id="saveDailyNote" class="primary">Save note</button>
+          <button id="checkIn" class="success">Check in</button>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<div id="notes" class="tab panel" style="display:none">
+  <div class="row">
+    <textarea id="noteInput" placeholder="New note"></textarea>
+  </div>
+  <div class="row">
+    <button id="addNote" class="primary">Add note</button>
+    <button id="clearNotes" class="warn">Clear all notes</button>
+  </div>
+  <div id="noteList" class="col" style="margin-top:10px"></div>
+</div>
+
+<div id="calendar" class="tab panel" style="display:none">
+  <div class="row">
+    <button id="prevMonth">Prev</button>
+    <div class="chip" id="monthLabel" style="margin:0 auto"></div>
+    <button id="nextMonth">Next</button>
+  </div>
+  <div id="calGrid" style="margin-top:10px; display:grid; grid-template-columns: repeat(7, 1fr); gap: 8px"></div>
+  <div class="muted" style="margin-top:8px">Green dot means check in saved. Number shows completed tasks</div>
+</div>
+
+<div id="stats" class="tab panel" style="display:none">
+  <div class="row">
+    <button id="last14">Last 14 days</button>
+    <button id="last30" class="primary">Last 30 days</button>
+    <button id="last90">Last 90 days</button>
+  </div>
+  <canvas id="chart" height="260"></canvas>
+</div>
+
+<div class="footer">
+  <button class="tab-btn active" data-tab="today">Today</button>
+  <button class="tab-btn" data-tab="notes">Notes</button>
+  <button class="tab-btn" data-tab="calendar">Calendar</button>
+  <button class="tab-btn" data-tab="stats">Stats</button>
+</div>
+
+  </div>  <script>
+    // State and storage
+    const storeKey = 'focusPro'
+    const now = new Date()
+
+    const state = load() || {
+      project: '',
+      tasks: [], // {id, text, done, created}
+      notes: [], // {id, text, dateISO}
+      log: {},   // dateISO: {done, note, checkin}
+      lastOpen: new Date().toISOString().slice(0,10)
+    }
+
+    // UI refs
+    const dateChip = document.getElementById('dateChip')
+    const projectInput = document.getElementById('projectInput')
+    const saveProjectBtn = document.getElementById('saveProject')
+    const taskInput = document.getElementById('taskInput')
+    const addTaskBtn = document.getElementById('addTask')
+    const taskList = document.getElementById('taskList')
+    const progressBar = document.getElementById('progressBar')
+    const todayDone = document.getElementById('todayDone')
+    const totalLeft = document.getElementById('totalLeft')
+    const streakEl = document.getElementById('streak')
+    const dailyNote = document.getElementById('dailyNote')
+    const saveDailyNote = document.getElementById('saveDailyNote')
+    const checkInBtn = document.getElementById('checkIn')
+
+    const noteInput = document.getElementById('noteInput')
+    const addNoteBtn = document.getElementById('addNote')
+    const noteList = document.getElementById('noteList')
+    const clearNotesBtn = document.getElementById('clearNotes')
+
+    const monthLabel = document.getElementById('monthLabel')
+    const calGrid = document.getElementById('calGrid')
+    const prevMonthBtn = document.getElementById('prevMonth')
+    const nextMonthBtn = document.getElementById('nextMonth')
+
+    const chartCanvas = document.getElementById('chart')
+    const last14Btn = document.getElementById('last14')
+    const last30Btn = document.getElementById('last30')
+    const last90Btn = document.getElementById('last90')
+
+    const exportBtn = document.getElementById('exportBtn')
+    const importFile = document.getElementById('importFile')
+
+    // Utils
+    function save() {
+      localStorage.setItem(storeKey, JSON.stringify(state))
+    }
+    function load() {
+      try {
+        const raw = localStorage.getItem(storeKey)
+        if (!raw) return null
+        return JSON.parse(raw)
+      } catch(e) { return null }
+    }
+    function uid() { return Math.random().toString(36).slice(2,9) }
+    function todayISO(d = new Date()) { return new Date(d.getFullYear(), d.getMonth(), d.getDate()).toISOString().slice(0,10) }
+    function fmt(dISO) {
+      const d = new Date(dISO)
+      return d.toLocaleDateString(undefined, { year: 'numeric', month: 'short', day: 'numeric' })
+    }
+
+    // Tabs
+    function switchTab(id) {
+      document.querySelectorAll('.tab').forEach(t => t.style.display = t.id === id ? 'block' : 'none')
+      document.querySelectorAll('.tab-btn').forEach(b => {
+        if (b.dataset.tab) b.classList.toggle('active', b.dataset.tab === id)
+      })
+    }
+    document.querySelectorAll('.tab-btn').forEach(b => {
+      if (!b.dataset.tab) return
+      b.addEventListener('click', () => switchTab(b.dataset.tab))
+    })
+
+    // Project
+    function renderProject() {
+      projectInput.value = state.project
+    }
+    saveProjectBtn.addEventListener('click', () => {
+      state.project = projectInput.value.trim()
+      save()
+    })
+
+    // Tasks
+    addTaskBtn.addEventListener('click', () => {
+      const text = taskInput.value.trim()
+      if (!text) return
+      state.tasks.push({ id: uid(), text, done: false, created: new Date().toISOString() })
+      taskInput.value = ''
+      save()
+      renderTasks()
+    })
+
+    function toggleTask(id) {
+      const t = state.tasks.find(x => x.id === id)
+      if (!t) return
+      t.done = !t.done
+      // update log for today
+      const key = todayISO()
+      const entry = state.log[key] || { done: 0, note: '', checkin: false }
+      entry.done = state.tasks.filter(x => x.done && todayISO(new Date(x.created)) === key).length
+      state.log[key] = entry
+      save()
+      renderTasks()
+      renderStats()
+      renderCalendar()
+    }
+
+    function deleteTask(id) {
+      state.tasks = state.tasks.filter(t => t.id !== id)
+      save()
+      renderTasks()
+      renderStats()
+      renderCalendar()
+    }
+
+    function renderTasks() {
+      taskList.innerHTML = ''
+      const frag = document.createDocumentFragment()
+      const open = state.tasks.filter(t => !t.done)
+      const doneTodayKey = todayISO()
+      const doneToday = state.tasks.filter(t => t.done && todayISO(new Date(t.created)) === doneTodayKey).length
+
+      state.tasks.forEach(t => {
+        const row = document.createElement('div')
+        row.className = 'task'
+        const check = document.createElement('div')
+        check.className = 'check' + (t.done ? ' done' : '')
+        check.addEventListener('click', () => toggleTask(t.id))
+        const txt = document.createElement('div')
+        txt.className = 'ttext' + (t.done ? ' done' : '')
+        txt.textContent = t.text
+        const del = document.createElement('button')
+        del.textContent = 'Delete'
+        del.className = 'warn'
+        del.addEventListener('click', () => deleteTask(t.id))
+        row.appendChild(check)
+        row.appendChild(txt)
+        row.appendChild(del)
+        frag.appendChild(row)
+      })
+      taskList.appendChild(frag)
+      totalLeft.textContent = open.length.toString()
+      todayDone.textContent = doneToday.toString()
+      const percent = state.tasks.length ? Math.round((state.tasks.filter(t => t.done).length / state.tasks.length) * 100) : 0
+      progressBar.style.width = percent + '%'
+    }
+
+    // Daily note and check in
+    saveDailyNote.addEventListener('click', () => {
+      const key = todayISO()
+      const entry = state.log[key] || { done: 0, note: '', checkin: false }
+      entry.note = dailyNote.value
+      state.log[key] = entry
+      save()
+      renderCalendar()
+    })
+
+    checkInBtn.addEventListener('click', () => {
+      const key = todayISO()
+      const entry = state.log[key] || { done: 0, note: '', checkin: false }
+      entry.checkin = true
+      // keep done count in sync
+      entry.done = state.tasks.filter(x => x.done && todayISO(new Date(x.created)) === key).length
+      state.log[key] = entry
+      save()
+      renderCalendar()
+      calcStreak()
+    })
+
+    // Notes
+    addNoteBtn.addEventListener('click', () => {
+      const text = noteInput.value.trim()
+      if (!text) return
+      state.notes.unshift({ id: uid(), text, dateISO: todayISO() })
+      noteInput.value = ''
+      save()
+      renderNotes()
+    })
+
+    clearNotesBtn.addEventListener('click', () => {
+      if (!confirm('Delete all notes')) return
+      state.notes = []
+      save()
+      renderNotes()
+    })
+
+    function renderNotes() {
+      noteList.innerHTML = ''
+      const frag = document.createDocumentFragment()
+      state.notes.forEach(n => {
+        const card = document.createElement('div')
+        card.className = 'panel'
+        const meta = document.createElement('div')
+        meta.className = 'muted'
+        meta.textContent = fmt(n.dateISO)
+        const p = document.createElement('div')
+        p.textContent = n.text
+        const row = document.createElement('div')
+        row.className = 'row'
+        const del = document.createElement('button')
+        del.textContent = 'Delete'
+        del.className = 'warn'
+        del.addEventListener('click', () => {
+          state.notes = state.notes.filter(x => x.id !== n.id)
+          save()
+          renderNotes()
+        })
+        row.appendChild(del)
+        card.appendChild(meta)
+        card.appendChild(p)
+        card.appendChild(row)
+        frag.appendChild(card)
+      })
+      noteList.appendChild(frag)
+    }
+
+    // Calendar
+    let calYear = now.getFullYear()
+    let calMonth = now.getMonth()
+
+    function renderCalendar() {
+      monthLabel.textContent = new Date(calYear, calMonth, 1).toLocaleDateString(undefined, { month: 'long', year: 'numeric' })
+      calGrid.innerHTML = ''
+      const firstDay = new Date(calYear, calMonth, 1)
+      const startWeekday = firstDay.getDay()
+      const daysInMonth = new Date(calYear, calMonth + 1, 0).getDate()
+      for (let i = 0; i < startWeekday; i++) {
+        const pad = document.createElement('div')
+        pad.className = 'panel'
+        pad.style.visibility = 'hidden'
+        calGrid.appendChild(pad)
+      }
+      for (let d = 1; d <= daysInMonth; d++) {
+        const cell = document.createElement('div')
+        cell.className = 'panel'
+        const dateISO = todayISO(new Date(calYear, calMonth, d))
+        const entry = state.log[dateISO]
+        const head = document.createElement('div')
+        head.style.display = 'flex'
+        head.style.justifyContent = 'space-between'
+        const num = document.createElement('div')
+        num.style.fontWeight = '800'
+        num.textContent = d.toString()
+        const dot = document.createElement('div')
+        dot.style.width = '10px'
+        dot.style.height = '10px'
+        dot.style.borderRadius = '999px'
+        dot.style.background = entry && entry.checkin ? 'var(--ok)' : 'transparent'
+        head.appendChild(num)
+        head.appendChild(dot)
+        const done = document.createElement('div')
+        done.className = 'muted'
+        done.textContent = entry ? (entry.done || 0) + ' done' : '0 done'
+        const note = document.createElement('div')
+        note.className = 'muted'
+        note.textContent = entry && entry.note ? 'Note saved' : ''
+        cell.appendChild(head)
+        cell.appendChild(done)
+        cell.appendChild(note)
+        calGrid.appendChild(cell)
+      }
+    }
+
+    prevMonthBtn.addEventListener('click', () => {
+      calMonth--
+      if (calMonth < 0) { calMonth = 11; calYear-- }
+      renderCalendar()
+    })
+    nextMonthBtn.addEventListener('click', () => {
+      calMonth++
+      if (calMonth > 11) { calMonth = 0; calYear++ }
+      renderCalendar()
+    })
+
+    // Streak
+    function calcStreak() {
+      let s = 0
+      let d = new Date()
+      while (true) {
+        const key = todayISO(d)
+        if (state.log[key] && state.log[key].checkin) { s++ } else { break }
+        d.setDate(d.getDate() - 1)
+      }
+      streakEl.textContent = s.toString()
+    }
+
+    // Stats chart
+    let chartCtx = chartCanvas.getContext('2d')
+    let chartState = { points: [], labels: [] }
+
+    function gatherRange(days) {
+      const pts = []
+      const labels = []
+      const start = new Date()
+      start.setDate(start.getDate() - (days - 1))
+      for (let i = 0; i < days; i++) {
+        const d = new Date(start)
+        d.setDate(start.getDate() + i)
+        const key = todayISO(d)
+        const val = state.log[key] ? state.log[key].done || 0 : 0
+        pts.push(val)
+        labels.push(d.toLocaleDateString(undefined, { month: 'short', day: 'numeric' }))
+      }
+      return { pts, labels }
+    }
+
+    function drawChart(days = 30) {
+      const { pts, labels } = gatherRange(days)
+      chartState.points = pts
+      chartState.labels = labels
+      const w = chartCanvas.width = chartCanvas.clientWidth
+      const h = chartCanvas.height = 260
+      const pad = 28
+      const max = Math.max(1, ...pts)
+      const xStep = (w - pad * 2) / Math.max(1, pts.length - 1)
+      const y = v => h - pad - (v / max) * (h - pad * 2)
+      const x = i => pad + i * xStep
+
+      const ctx = chartCtx
+      ctx.clearRect(0,0,w,h)
+
+      // grid
+      ctx.globalAlpha = 0.25
+      ctx.lineWidth = 1
+      for (let i = 0; i <= max; i++) {
+        const gy = y(i)
+        ctx.beginPath()
+        ctx.moveTo(pad, gy)
+        ctx.lineTo(w - pad, gy)
+        ctx.strokeStyle = '#2a324a'
+        ctx.stroke()
+      }
+      ctx.globalAlpha = 1
+
+      // line
+      ctx.beginPath()
+      pts.forEach((v, i) => {
+        const px = x(i)
+        const py = y(v)
+        if (i === 0) ctx.moveTo(px, py)
+        else ctx.lineTo(px, py)
+      })
+      const grad = ctx.createLinearGradient(0,0,w,0)
+      grad.addColorStop(0, '#6aa3ff')
+      grad.addColorStop(1, '#7effb2')
+      ctx.strokeStyle = grad
+      ctx.lineWidth = 3
+      ctx.stroke()
+
+      // points
+      pts.forEach((v, i) => {
+        const px = x(i)
+        const py = y(v)
+        ctx.beginPath()
+        ctx.arc(px, py, 3, 0, Math.PI*2)
+        ctx.fillStyle = '#a9c6ff'
+        ctx.fill()
+      })
+    }
+
+    last14Btn.addEventListener('click', () => drawChart(14))
+    last30Btn.addEventListener('click', () => drawChart(30))
+    last90Btn.addEventListener('click', () => drawChart(90))
+
+    // Export import
+    exportBtn.addEventListener('click', () => {
+      const blob = new Blob([JSON.stringify(state, null, 2)], { type: 'application/json' })
+      const url = URL.createObjectURL(blob)
+      const a = document.createElement('a')
+      a.href = url
+      a.download = 'focus-pro.json'
+      document.body.appendChild(a)
+      a.click()
+      setTimeout(() => URL.revokeObjectURL(url), 0)
+    })
+
+    importFile.addEventListener('change', ev => {
+      const file = ev.target.files && ev.target.files[0]
+      if (!file) return
+      const reader = new FileReader()
+      reader.onload = e => {
+        try {
+          const obj = JSON.parse(e.target.result)
+          Object.assign(state, obj)
+          save()
+          init()
+        } catch(e) {}
+      }
+      reader.readAsText(file)
+    })
+
+    // Init
+    function init() {
+      dateChip.textContent = new Date().toLocaleDateString(undefined, { weekday: 'short', year: 'numeric', month: 'short', day: 'numeric' })
+      renderProject()
+      renderTasks()
+      renderNotes()
+      renderCalendar()
+      calcStreak()
+      drawChart(30)
+      const key = todayISO()
+      dailyNote.value = state.log[key] ? state.log[key].note || '' : ''
+    }
+
+    init()
+  </script></body>
+</html>
